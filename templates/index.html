@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Recognition</title>
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Dark theme background */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Main container for the video feed */
+        .container {
+            text-align: center;
+            background-color: #1d1d1d;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Heading style */
+        h1 {
+            font-size: 3em;
+            color: #ff9900;
+            margin-bottom: 20px;
+        }
+
+        /* Video frame style */
+        #video_frame {
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #ff9900;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Info text style */
+        .info {
+            font-size: 1.5em;
+            color: #ffffff;
+            margin-top: 15px;
+            background-color: #333333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        /* Button for action */
+        .action-btn {
+            background-color: #ff9900;
+            color: #121212;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #e68a00;
+        }
+
+        /* Footer section */
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            font-size: 1em;
+            color: #aaaaaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ASL Recognition</h1>
+        
+        <!-- Display the webcam feed -->
+        <div>
+            <img id="video_frame" src="{{ url_for('video_feed') }}" alt="Video Feed" />
+        </div>
+
+        <!-- Button to stop the webcam feed (optional) -->
+        <button class="action-btn" onclick="stopFeed()">Stop Feed</button>
+    </div>
+
+
+    <script>
+        // Simple function to stop webcam feed (if required)
+        function stopFeed() {
+            var videoFrame = document.getElementById("video_frame");
+            videoFrame.src = "";  // Clear the video source
+            alert("Webcam feed stopped.");
+        }
+    </script>
+</body>
+</html>

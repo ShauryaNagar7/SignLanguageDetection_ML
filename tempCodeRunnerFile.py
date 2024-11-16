@@ -9,20 +9,19 @@ import numpy as np
 import tensorflow as tf
 from keras.models import model_from_json
 import mediapipe as mp
-import time
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Load your trained model
-json_file = open("model.json", "r")  
+json_file = open("model/model.json", "r")
 model_json = json_file.read()
 json_file.close()
 model = model_from_json(model_json)
-model.load_weights("model.h5")  
+model.load_weights("model/model.h5")
 
 # Actions and other variables
-actions = ["A", "B", "D","E", "G", "K", "L", "O", "U"]
+actions = ["A", "B", "C", "..."]  # Replace with your action labels
 sequence = []
 sentence = []
 accuracy = []
@@ -50,12 +49,11 @@ def extract_keypoints(results):
             for lm in hand_landmarks.landmark:
                 keypoints.extend([lm.x, lm.y, lm.z])
     else:
-        keypoints.extend([0] * 63)  # If no hand detected, return zeros
+        keypoints.extend([0] * 63)
     return keypoints
 
 def generate_frames():
     global sequence, sentence, accuracy
-    prev_time = time.time()
 
     while True:
         ret, frame = cap.read()
@@ -64,48 +62,26 @@ def generate_frames():
         
         crop_frame = frame[40:400, 0:300]
         frame = cv2.rectangle(frame, (0, 40), (300, 400), (255, 255, 255), 2)
-        
-        # Preprocess the input frame (resize to model input size)
-        crop_frame = cv2.resize(crop_frame, (224, 224))  # Assuming the model was trained with 224x224 inputs
-        
         image, results = mediapipe_detection(crop_frame, hands)
         
         keypoints = extract_keypoints(results)
         sequence.append(keypoints)
-        sequence = sequence[-42:]  # Keep only the last 42 frames
+        sequence = sequence[-42:]
 
         if len(sequence) == 42:
-            try:
-                # Predict using the model and handle any errors during prediction
-                res = model.predict(np.expand_dims(sequence, axis=0))[0]
-                
-                # Use dynamic thresholding based on maximum confidence
-                confidence_threshold = np.max(res)
-                if confidence_threshold > threshold:
-                    action = actions[np.argmax(res)]
-                    if not sentence or sentence[-1] != action:
-                        sentence.append(action)
-                        accuracy.append(f"{confidence_threshold * 100:.2f}%")
-                    sentence = sentence[-1:]  # Keep only the last prediction
-                    accuracy = accuracy[-1:]
-            
-            except Exception as e:
-                print(f"Prediction error: {e}")
-                continue  # Skip this frame and continue the loop
+            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+            if res[np.argmax(res)] > threshold:
+                action = actions[np.argmax(res)]
+                if not sentence or sentence[-1] != action:
+                    sentence.append(action)
+                    accuracy.append(f"{res[np.argmax(res)] * 100:.2f}%")
+                sentence = sentence[-1:]
+                accuracy = accuracy[-1:]
 
-        # Display prediction result on the frame
         cv2.rectangle(frame, (0, 0), (300, 40), (245, 117, 16), -1)
         cv2.putText(frame, f"Output: {''.join(sentence)} {''.join(accuracy)}", (3, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-
-        # Calculate and display FPS
-        curr_time = time.time()
-        fps = 1 / (curr_time - prev_time)
-        prev_time = curr_time
-        cv2.putText(frame, f"FPS: {fps:.2f}", (230, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
-        # Convert frame to byte format for Flask response
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
